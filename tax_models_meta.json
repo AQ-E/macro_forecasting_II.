@@ -642,15 +642,15 @@
     {
       "tax_head": "gst",
       "model": "enet",
-      "h1_smape": 15.64,
-      "h3_smape": 21.25,
-      "h5_smape": 28.46,
-      "mae_pct": 12.36,
-      "rmse_pct": 22.26,
-      "rmse_pct_abs": 48.14,
-      "bias_pct": -9.57,
+      "h1_smape": 6.94,
+      "h3_smape": 12.2,
+      "h5_smape": 17.0,
+      "mae_pct": 7.13,
+      "rmse_pct": 8.44,
+      "rmse_pct_abs": 8.67,
+      "bias_pct": 2.47,
       "n_test": 14,
-      "stability": 0.1852,
+      "stability": 0.0452,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -706,22 +706,22 @@
         },
         {
           "actual": 4753000.0,
-          "pred": 1084283.2460828805
+          "pred": 4570300.506718319
         }
       ]
     },
     {
       "tax_head": "gst",
       "model": "ardl",
-      "h1_smape": 25.1,
-      "h3_smape": 28.74,
-      "h5_smape": 36.27,
-      "mae_pct": 20.57,
-      "rmse_pct": 30.71,
-      "rmse_pct_abs": 62.18,
-      "bias_pct": -1.78,
+      "h1_smape": 12.66,
+      "h3_smape": 15.99,
+      "h5_smape": 20.15,
+      "mae_pct": 13.98,
+      "rmse_pct": 17.87,
+      "rmse_pct_abs": 23.89,
+      "bias_pct": 13.76,
       "n_test": 14,
-      "stability": 0.228,
+      "stability": 0.1112,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -777,22 +777,22 @@
         },
         {
           "actual": 4753000.0,
-          "pred": 310437.91224132536
+          "pred": 4810856.55865272
         }
       ]
     },
     {
       "tax_head": "gst",
       "model": "arimax",
-      "h1_smape": 25.31,
-      "h3_smape": 26.74,
-      "h5_smape": 35.45,
-      "mae_pct": 20.77,
-      "rmse_pct": 31.69,
-      "rmse_pct_abs": 64.46,
-      "bias_pct": -1.69,
+      "h1_smape": 12.82,
+      "h3_smape": 15.12,
+      "h5_smape": 17.86,
+      "mae_pct": 14.26,
+      "rmse_pct": 19.29,
+      "rmse_pct_abs": 28.54,
+      "bias_pct": 13.26,
       "n_test": 14,
-      "stability": 0.2394,
+      "stability": 0.1298,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -848,7 +848,7 @@
         },
         {
           "actual": 4753000.0,
-          "pred": 277997.4713211173
+          "pred": 4605400.311491716
         }
       ]
     }
