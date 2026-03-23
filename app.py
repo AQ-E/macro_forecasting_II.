@@ -2484,24 +2484,6 @@ st.markdown(f"""
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-header"><div class="kpi-icon-wrapper purple">📋</div></div>
-        <div class="kpi-label">Revised Estimates (CFY)</div>
-        <div class="kpi-value">Rs. {revised_total_bn:,.1f}B</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-header"><div class="kpi-icon-wrapper teal">📉</div></div>
-        <div class="kpi-label">Budget Estimates (CFY)</div>
-        <div class="kpi-value">Rs. {budget_total_bn:,.1f}B</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
     # vs Budget Estimates
     growth_vs_budget = ((total_fore_2027 / budget_total_bn) - 1) * 100 if budget_total_bn > 0 else 0.0
     # vs Revised Estimates
@@ -2517,6 +2499,24 @@ with col3:
         <div class="kpi-value">Rs. {total_fore_2027:,.1f}B</div>
         <div class="kpi-trend {_cls_b}" style="margin-bottom:4px">{_sym_b} {abs(growth_vs_budget):.1f}% vs Budget Estimates</div>
         <div class="kpi-trend {_cls_r}">{_sym_r} {abs(growth_vs_revised):.1f}% vs Revised Estimates</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon-wrapper teal">📉</div></div>
+        <div class="kpi-label">Budget Estimates (CFY)</div>
+        <div class="kpi-value">Rs. {budget_total_bn:,.1f}B</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon-wrapper purple">📋</div></div>
+        <div class="kpi-label">Revised Estimates (CFY)</div>
+        <div class="kpi-value">Rs. {revised_total_bn:,.1f}B</div>
     </div>
     """, unsafe_allow_html=True)
 
