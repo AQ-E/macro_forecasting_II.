@@ -42,7 +42,7 @@ st.set_page_config(
 )
 
 # ============================================================================
-# STABLE VERSION: 1.2.10 (Consumption Purged)
+# STABLE VERSION: 1.3.0 (GDP-Driven | Consumption Purged | IndentationError Fixed) 2026-03-24
 # LAST REFRESH: 2026-03-23 23:15 (GDP-Based Transition)
 # ============================================================================
 st.markdown("""
