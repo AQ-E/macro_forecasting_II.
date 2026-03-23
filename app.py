@@ -2475,7 +2475,7 @@ st.markdown(f"""
 <div class="executive-header">
     <div class="header-content">
         <div class="header-left">
-            <div class="header-title">Pakistan Revenue Forecasting System (PRFS)</div>
+            <div class="header-title">Pakistan Revenue Forecasting System (PRFS) (v1.2.8)</div>
             <div class="header-subtitle">ARDL • ARIMAX • ElasticNet • Dynamic Structural Model • Ensemble with bootstrap uncertainty</div>
         </div>
         <div class="header-right">
