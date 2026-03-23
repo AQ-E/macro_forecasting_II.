@@ -32,7 +32,6 @@ from statsmodels.stats.stattools import jarque_bera
 # ============================================================================
 # PAGE CONFIGURATION
 # ============================================================================
-VERSION = "1.2.10_REVERT"
 
 st.set_page_config(
     page_title="Pakistan Revenue Forecasting System (PRFS)",
@@ -2477,7 +2476,7 @@ st.markdown(f"""
 <div class="executive-header">
     <div class="header-content">
         <div class="header-left">
-            <div class="header-title">Pakistan Revenue Forecasting System (PRFS) (v1.2.10)</div>
+            <div class="header-title">Pakistan Revenue Forecasting System (PRFS)</div>
             <div class="header-subtitle">ARDL • ARIMAX • ElasticNet • Dynamic Structural Model • Ensemble with bootstrap uncertainty</div>
         </div>
         <div class="header-right">
