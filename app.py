@@ -1381,7 +1381,12 @@ def build_multimodel_future_exog_from_dynamic(
     idx = pd.PeriodIndex(years, freq="Y")
     fut = pd.DataFrame(index=idx)
 
-        "log_exrate":     ("exrate_growth", 1.0),
+    _map = {
+        "log_gdp":        ("gdp_growth",    1.0),
+        "log_imports":    ("imports_growth", elasticities.get("imports", 1.0)),
+        "log_lsm":        ("lsm_growth",     elasticities.get("lsm",     1.0)),
+        "log_exrate":     ("exrate_growth",  1.0),
+    }
 
     for col, (driver_key, elast) in _map.items():
         if col not in df_hist.columns:
@@ -1395,7 +1400,7 @@ def build_multimodel_future_exog_from_dynamic(
             cur = float(series_clean.iloc[-1])
             vals = []
             for h in range(horizon):
-                g = _yearly(targets_dict[driver_key], h) * elast
+                g = _yearly(targets_dict.get(driver_key, 0.0), h) * elast
                 cur = cur + np.log1p(g)
                 vals.append(cur)
             fut[col] = vals
