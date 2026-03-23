@@ -456,7 +456,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     border: 1px solid #BFDBFE;
     border-radius: var(--radius-lg);
     padding: 1.125rem;
-    height: 180px; /* Increased to provide ample vertical clearance for text */
+    min-height: 180px; /* Changed to min-height so extra badges aren't cut off */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
