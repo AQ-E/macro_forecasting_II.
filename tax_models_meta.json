@@ -642,15 +642,15 @@
     {
       "tax_head": "gst",
       "model": "enet",
-      "h1_smape": 7.65,
-      "h3_smape": 13.91,
-      "h5_smape": 19.12,
-      "mae_pct": 7.96,
-      "rmse_pct": 9.95,
-      "rmse_pct_abs": 11.72,
-      "bias_pct": 4.19,
+      "h1_smape": 15.64,
+      "h3_smape": 21.25,
+      "h5_smape": 28.46,
+      "mae_pct": 12.36,
+      "rmse_pct": 22.26,
+      "rmse_pct_abs": 48.14,
+      "bias_pct": -9.57,
       "n_test": 14,
-      "stability": 0.0596,
+      "stability": 0.1852,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -698,30 +698,30 @@
         },
         {
           "actual": 3086832.0000000014,
-          "pred": 3781598.0303009134
+          "pred": 3442404.601959733
         },
         {
           "actual": 3901372.0000000033,
-          "pred": 4155351.144612518
+          "pred": 4068400.7151017436
         },
         {
           "actual": 4753000.0,
-          "pred": 4642555.94706438
+          "pred": 1084283.2460828805
         }
       ]
     },
     {
       "tax_head": "gst",
       "model": "ardl",
-      "h1_smape": 14.95,
-      "h3_smape": 17.94,
-      "h5_smape": 22.33,
-      "mae_pct": 16.96,
-      "rmse_pct": 23.04,
-      "rmse_pct_abs": 33.24,
-      "bias_pct": 14.95,
+      "h1_smape": 25.1,
+      "h3_smape": 28.74,
+      "h5_smape": 36.27,
+      "mae_pct": 20.57,
+      "rmse_pct": 30.71,
+      "rmse_pct_abs": 62.18,
+      "bias_pct": -1.78,
       "n_test": 14,
-      "stability": 0.1559,
+      "stability": 0.228,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -769,30 +769,30 @@
         },
         {
           "actual": 3086832.0000000014,
-          "pred": 4980788.91269042
+          "pred": 4188503.910555614
         },
         {
           "actual": 3901372.0000000033,
-          "pred": 5268001.228478472
+          "pred": 5075487.163946379
         },
         {
           "actual": 4753000.0,
-          "pred": 4169513.1835542275
+          "pred": 310437.91224132536
         }
       ]
     },
     {
       "tax_head": "gst",
       "model": "arimax",
-      "h1_smape": 15.51,
-      "h3_smape": 17.02,
-      "h5_smape": 20.84,
-      "mae_pct": 17.89,
-      "rmse_pct": 25.9,
-      "rmse_pct_abs": 39.91,
-      "bias_pct": 15.79,
+      "h1_smape": 25.31,
+      "h3_smape": 26.74,
+      "h5_smape": 35.45,
+      "mae_pct": 20.77,
+      "rmse_pct": 31.69,
+      "rmse_pct_abs": 64.46,
+      "bias_pct": -1.69,
       "n_test": 14,
-      "stability": 0.1873,
+      "stability": 0.2394,
       "series": [
         {
           "actual": 842527.9999999995,
@@ -840,15 +840,15 @@
         },
         {
           "actual": 3086832.0000000014,
-          "pred": 5162835.926940112
+          "pred": 4182552.09123763
         },
         {
           "actual": 3901372.0000000033,
-          "pred": 5898561.092935754
+          "pred": 5602576.321067915
         },
         {
           "actual": 4753000.0,
-          "pred": 4061427.145342959
+          "pred": 277997.4713211173
         }
       ]
     }
