@@ -2524,14 +2524,13 @@ with col3:
     """, unsafe_allow_html=True)
 
 with col4:
-    total_cg_trend = "positive" if total_cagr_final > 0 else "neutral"
-    total_cg_symbol = "↗" if total_cagr_final > 0 else "↘"
+    _err_trend = "neutral" if mae_display == "N/A" else ("positive" if float(mae_display.replace('%','')) < 15 else "negative")
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-header"><div class="kpi-icon-wrapper primary">📈</div></div>
-        <div class="kpi-label">CAGR (%)</div>
-        <div class="kpi-value">{total_cagr_final:+.1f}%</div>
-        <div class="kpi-trend {total_cg_trend}">{total_cg_symbol} vs Revised</div>
+        <div class="kpi-header"><div class="kpi-icon-wrapper primary">🎯</div></div>
+        <div class="kpi-label">Forecast Error (MAE%)</div>
+        <div class="kpi-value">{mae_display}</div>
+        <div class="kpi-trend {_err_trend}">↯ Out-of-sample</div>
     </div>
     """, unsafe_allow_html=True)
 
