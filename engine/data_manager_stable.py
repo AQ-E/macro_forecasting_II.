@@ -31,7 +31,8 @@ def prepare_transforms(df):
     """
     transformed_df = df.copy()
     
-    levels = ['dt', 'gst', 'fed', 'customs', 'gdp', 'imports', 'dutiable_imports', 'lsm', 'consumption', 'exrate']
+    levels = ['dt', 'gst', 'fed', 'customs', 'gdp', 'imports', 'dutiable_imports', 'lsm', 'exrate']
+    order = ['log_imports', 'log_dutiable_imports', 'log_lsm']
     rates = ['inflation', 'policy rate']
     
     # 1. Forward fill macro rates to handle missing end-of-series targets

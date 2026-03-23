@@ -38,10 +38,6 @@ class ForecastingPipeline:
         Stage 1 - Channel/Base Equations
         Imports, LSM, Consumption, Dutiable Imports (Proxy if needed)
         """
-        # Robustness: Proxy consumption if NaN found (often missing in FBR/PBS tables)
-        if 'log_consumption' not in self.df.columns or self.df['log_consumption'].isna().sum() > 0:
-             # Proxy: Consumption ~ 0.8 * GDP (Natural fallback for buoyancy comparison)
-             self.df['log_consumption'] = self.df['log_gdp'] + np.log(0.8)
         # A) Imports base
         self._fit_channel('log_imports', ['log_gdp', 'log_exrate', 'policy rate', 'inflation'])
         
@@ -53,10 +49,7 @@ class ForecastingPipeline:
             self.channel_predictions['log_dutiable_imports'] = self.channel_predictions['log_imports']
             
         # C) LSM base
-        self._fit_channel('log_lsm', ['log_gdp', 'policy rate', 'inflation'])
-        
-        # D) Consumption base
-        self._fit_channel('log_consumption', ['log_gdp', 'inflation', 'policy rate'])
+        self._fit_channel('log_lsm', ['log_gdp', 'inflation', 'policy rate'])
 
     def _fit_channel(self, y, x_pool):
         # 1. Enforce VIF < 10 and Parsimony
@@ -117,8 +110,8 @@ class ForecastingPipeline:
             
         tax_specs = {
             'dt': {'y': 'log_dt', 'bases': ['log_gdp_hat', 'log_lsm_hat'], 'others': ['inflation']},
-            'gst': {'y': 'log_gst', 'bases': ['log_consumption_hat', 'log_imports_hat'], 'others': ['inflation', 'log_exrate']},
-            'fed': {'y': 'log_fed', 'bases': ['log_lsm_hat'], 'others': ['inflation']},
+            'gst': {'y': 'log_gst', 'bases': ['log_gdp_hat', 'log_imports_hat'], 'others': ['inflation', 'log_exrate']},
+            'fed': {'y': 'log_fed', 'bases': ['log_lsm_hat', 'log_gdp_hat'], 'others': ['inflation']},
             'customs': {'y': 'log_customs', 'bases': ['log_dutiable_imports_hat', 'log_imports_hat'], 'others': ['log_exrate', 'inflation']}
         }
         

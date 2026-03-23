@@ -42,7 +42,8 @@ st.set_page_config(
 )
 
 # ============================================================================
-# EXECUTIVE DESIGN SYSTEM
+# STABLE VERSION: 1.2.10 (Consumption Purged)
+# LAST REFRESH: 2026-03-23 23:15 (GDP-Based Transition)
 # ============================================================================
 st.markdown("""
 <style>
@@ -1133,11 +1134,6 @@ VAR_GLOSSARY = {
         "Predicted LSM index from Stage 1. LSM is a proxy for industrial/manufacturing "
         "activity which drives corporate profits and hence direct/excise taxes."
     ),
-    "log_consumption_hat": (
-        "Predicted Private Consumption (log)",
-        "Predicted private consumption expenditure from Stage 1. This is the primary "
-        "tax base for GST/Sales Tax — as consumption rises, sales tax collections grow."
-    ),
     "inflation": (
         "Inflation Rate (%)",
         "Consumer price inflation. Higher inflation mechanically raises nominal tax "
@@ -1171,10 +1167,10 @@ HEAD_EXPLANATIONS = {
         "Stage 1 predicts GDP/LSM from macro fundamentals, then Stage 2 links DT to those predictions."
     ),
     "gst": (
-        "Sales Tax (GST) is modelled as a function of **predicted consumption** and "
+        "Sales Tax (GST) is modelled as a function of **GDP** and "
         "**predicted imports** (from Stage 1), plus inflation and exchange rate. "
         "The logic: GST is levied on domestic sales and imports. Stage 1 predicts "
-        "consumption and imports from macro fundamentals, then Stage 2 links GST to those predictions."
+        "macro fundamentals, then Stage 2 links GST to those predictions."
     ),
     "fed": (
         "Federal Excise Duty is modelled as a function of **predicted LSM** "
@@ -1235,10 +1231,7 @@ def load_tax_data() -> pd.DataFrame:
 def prepare_transforms(df: pd.DataFrame) -> pd.DataFrame:
     """Log-transform levels; forward-fill rates and missing levels."""
     out = df.copy()
-    levels = [
-        "dt", "gst", "fed", "customs", "gdp", "imports",
-        "dutiable_imports", "lsm", "consumption", "exrate",
-    ]
+    levels = ['dt', 'gst', 'fed', 'customs', 'gdp', 'imports', 'dutiable_imports', 'lsm', 'exrate']
     rates = ["inflation", "policy rate"]
 
     for col in rates:
@@ -1380,7 +1373,7 @@ def build_multimodel_future_exog_from_dynamic(
     using ONLY the four dynamic PRFS macro targets.
     """
     if elasticities is None:
-        elasticities = dict(imports=1.0, consumption=1.0, lsm=1.0)
+        elasticities = dict(imports=1.0, lsm=1.0)
 
     last = df_hist.iloc[-1]
     last_year = int(df_hist.index.max().year)
@@ -1388,15 +1381,7 @@ def build_multimodel_future_exog_from_dynamic(
     idx = pd.PeriodIndex(years, freq="Y")
     fut = pd.DataFrame(index=idx)
 
-    _map: Dict[str, tuple] = {
-        "log_gdp_nonagr": ("gdp_growth", 1.0),
-        "log_gdp":        ("gdp_growth", 1.0),
-        "log_lsm":        ("gdp_growth", elasticities.get("lsm", 1.0)),
-        "log_imports":    ("gdp_growth", elasticities.get("imports", 1.0)),
-        "log_dutiable_imports": ("gdp_growth", elasticities.get("imports", 1.0)),
-        "log_consumption":      ("gdp_growth", elasticities.get("consumption", 1.0)),
         "log_exrate":     ("exrate_growth", 1.0),
-    }
 
     for col, (driver_key, elast) in _map.items():
         if col not in df_hist.columns:
@@ -2213,10 +2198,9 @@ def render_sidebar(
             "sub-series for the multi-model engine. Default = 1.0 (proportional)."
         )
         imports_e = sb.number_input("Imports ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
-        cons_e = sb.number_input("Consumption ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
         lsm_e = sb.number_input("LSM ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
 
-    elasticities = dict(imports=imports_e, consumption=cons_e, lsm=lsm_e)
+    elasticities = dict(imports=imports_e, lsm=lsm_e)
 
     # Policy Factors
     sb.markdown("---")
@@ -2501,8 +2485,8 @@ with col1:
     # vs Revised Estimates
     growth_vs_revised = ((total_fore_2027 / revised_total_bn) - 1) * 100 if revised_total_bn > 0 else 0.0
     _sym_b = "↗" if growth_vs_budget > 0 else "↘"
-    _sym_r = "↗" if growth_vs_revised > 0 else "↘"
     _cls_b = "positive" if growth_vs_budget > 0 else "neutral"
+    _sym_r = "↗" if growth_vs_revised > 0 else "↘"
     _cls_r = "positive" if growth_vs_revised > 0 else "neutral"
     st.markdown(f"""
     <div class="kpi-card">
@@ -2900,7 +2884,7 @@ with tab3:
                     "Model": f"DSM ({row['Model']})",
                     "h1 sMAPE%": row.get("h1_sMAPE%", row.get("sMAPE%", None)),
                     "h3 sMAPE%": row.get("h3_sMAPE%", None),
-                    "h5 sMAPE%": row.get("h5_sMAPE%", None),
+                    "h5 sMAPE%": row.get("h5_smape", None),
                     "RMSE%": row.get("RMSE%", row.get("WAPE%", None)),
                     "Bias%": row.get("Bias%", None),
                     "Stability": row.get("Stability", None),
@@ -3161,7 +3145,7 @@ the *exogenous* component of each intermediate variable:
 | **Imports** | `log_imports = f(log_gdp, log_exrate, policy_rate, inflation)` | Demand-side import function; driven by income and price effects |
 | **Dutiable Imports** | `log_dutiable_imports = f(log_imports, log_exrate, policy_rate, inflation)` | Composition of import basket subject to tariff |
 | **LSM (Large-Scale Manufacturing)** | `log_lsm = f(log_gdp, policy_rate, inflation)` | Output proxy for domestic value-added tax base |
-| **Consumption** | `log_consumption = f(log_gdp, inflation, policy_rate)` | Household absorption; primary GST/sales tax base |
+| **GDP** | `log_gdp` | Overall economic driver; primary GST/sales tax base |
 
 Each channel equation is fitted using `ardl_select_order()` with AIC-optimal lag selection, 
 subject to the constraint `p, q ≤ n/8` to preserve degrees of freedom on the ~30-observation sample.
@@ -3170,7 +3154,6 @@ subject to the constraint `p, q ≤ n/8` to preserve degrees of freedom on the ~
 - `log_imports_hat`
 - `log_dutiable_imports_hat`
 - `log_lsm_hat`
-- `log_consumption_hat`
 - `log_gdp_hat` ≡ `log_gdp` (exogenous by assumption)
 
 These `_hat` regressors are **purged of endogeneity** — they represent only the variation in 
@@ -3186,7 +3169,7 @@ Each tax head is then regressed on its appropriate structural tax base using the
 | Tax Head | Dependent Variable | Stage-2 Structural Regressor |
 |----------|--------------------|-------------------------------|
 | **Income Tax (DT)** | `log_dt` | `log_gdp_hat`, `log_lsm_hat` |
-| **GST** | `log_gst` | `log_consumption_hat`, `log_gdp_hat` |
+| **GST** | `log_gst` | `log_gdp`, `log_imports`, `inflation` |
 | **FED** | `log_fed` | `log_lsm_hat`, `log_gdp_hat` |
 | **Customs** | `log_customs` | `log_dutiable_imports_hat`, `log_imports_hat` |
 

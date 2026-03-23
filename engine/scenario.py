@@ -16,7 +16,7 @@ class ScenarioEngine:
         last_row = self.df.iloc[-1].copy()
         
         # Prepare last row: ensure logs AND macro rates are computed if levels exist
-        levels = ['dt', 'gst', 'fed', 'customs', 'gdp', 'imports', 'dutiable_imports', 'lsm', 'consumption', 'exrate']
+        levels = ['dt', 'gst', 'fed', 'customs', 'gdp', 'imports', 'dutiable_imports', 'lsm', 'exrate']
         for col in levels:
             if col in last_row and pd.isna(last_row.get(f'log_{col}')):
                 val = last_row[col]
