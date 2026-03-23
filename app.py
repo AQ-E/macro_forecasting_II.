@@ -2512,16 +2512,24 @@ with col2:
     """, unsafe_allow_html=True)
 
 with col3:
-    proj_trend_class = "positive" if growth_pct_2027 > 0 else "neutral"
-    proj_trend_symbol = "↗" if growth_pct_2027 > 0 else "↘"
+    # vs Budget Estimates
+    growth_vs_budget = ((total_fore_2027 / budget_total_bn) - 1) * 100 if budget_total_bn > 0 else 0.0
+    # vs Revised Estimates
+    growth_vs_revised = ((total_fore_2027 / revised_total_bn) - 1) * 100 if revised_total_bn > 0 else 0.0
+    _sym_b = "↗" if growth_vs_budget > 0 else "↘"
+    _sym_r = "↗" if growth_vs_revised > 0 else "↘"
+    _cls_b = "positive" if growth_vs_budget > 0 else "neutral"
+    _cls_r = "positive" if growth_vs_revised > 0 else "neutral"
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-header"><div class="kpi-icon-wrapper primary">💰</div></div>
         <div class="kpi-label">Projection (NFY)</div>
         <div class="kpi-value">Rs. {total_fore_2027:,.1f}B</div>
-        <div class="kpi-trend {proj_trend_class}">{proj_trend_symbol} {abs(growth_pct_2027):.1f}%</div>
+        <div class="kpi-trend {_cls_b}" style="margin-bottom:4px">{_sym_b} {abs(growth_vs_budget):.1f}% vs Budget Estimates</div>
+        <div class="kpi-trend {_cls_r}">{_sym_r} {abs(growth_vs_revised):.1f}% vs Revised Estimates</div>
     </div>
     """, unsafe_allow_html=True)
+
 
 with col4:
     total_cg_trend = "positive" if total_cagr_final > 0 else "neutral"
