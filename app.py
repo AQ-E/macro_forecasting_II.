@@ -2202,18 +2202,8 @@ def render_sidebar(
             policy_rate=path["Policy Rate (%)"].tolist(),
         )
 
-    sb.markdown("---")
-
-    # Advanced Settings — use sb consistently inside expander
-    with sb.expander("⚙️ Advanced Settings", expanded=False):
-        sb.caption(
-            "These elasticities control how GDP growth maps to "
-            "sub-series for the multi-model engine. Default = 1.0 (proportional)."
-        )
-        imports_e = sb.number_input("Imports ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
-        cons_e = sb.number_input("Consumption ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
-        lsm_e = sb.number_input("LSM ↔ GDP elasticity", 0.0, 3.0, 1.0, 0.1)
-
+    # Hardcoded Advanced Settings (Hidden from UI)
+    imports_e, cons_e, lsm_e = 1.0, 1.0, 1.0
     elasticities = dict(imports=imports_e, consumption=cons_e, lsm=lsm_e)
 
     # Policy Factors
