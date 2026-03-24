@@ -1254,6 +1254,7 @@ def prepare_transforms(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_buoyancy() -> Optional[Dict]:
+    # Cache bust: Reload updated buoyancy_estimates.xlsx
     path = _resolve("buoyancy_estimates.xlsx")
     if not path:
         return None
