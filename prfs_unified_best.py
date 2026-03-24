@@ -1771,7 +1771,12 @@ def mm_perf_table(meta: Dict) -> pd.DataFrame:
     return pd.DataFrame(meta["performance"])
 
 def mm_best_model_by_mape(perf: pd.DataFrame, head: str) -> str:
-    sub = perf[perf["tax_head"] == head].sort_values("mae_pct")
+    """Select best model strictly by out-of-sample h1 sMAPE (lowest wins)."""
+    sub = perf[(perf["tax_head"] == head) & (perf["n_test"] > 0)].copy()
+    if "h1_smape" in sub.columns:
+        sub = sub.dropna(subset=["h1_smape"]).sort_values("h1_smape")
+    else:
+        sub = sub.sort_values("mae_pct")
     return str(sub.iloc[0]["model"]) if len(sub) else "ardl"
 
 @st.cache_data(show_spinner=False)
@@ -2807,34 +2812,39 @@ with tab2:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ─── TAB 3 — Forecast Accuracy ─────────────────────────────────────────────
+# --- TAB 3 - Forecast Accuracy ---
 with tab3:
     st.markdown("""
     <div class="content-section">
         <div class="section-header">
             <div>
                 <div class="section-title">Forecast Accuracy</div>
-                <div class="section-subtitle">Expanding-window backtest with recursive multi-step forecasting</div>
+                <div class="section-subtitle">Expanding-window backtest &mdash; n_test=5, ranked by lowest h1 sMAPE (out-of-sample only)</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
     rows_all = []
+    best_model_name = None
 
     if perf is not None:
-        sub = perf[perf["tax_head"] == head].copy()
-        for _, r in sub.iterrows():
+        sub = perf[(perf["tax_head"] == head) & (perf["n_test"] > 0)].copy()
+        if best_model_name is None and len(sub) > 0:
+            sort_col = "h1_smape" if "h1_smape" in sub.columns else "mae_pct"
+            best_row  = sub.dropna(subset=[sort_col]).sort_values(sort_col)
+            best_model_name = str(best_row.iloc[0]["model"]).upper() if len(best_row) else None
+        for _, r in perf[perf["tax_head"] == head].iterrows():
+            if r.get("n_test", 0) == 0:
+                continue   # skip models with no OOS data
             rows_all.append({
-                "Model": r["model"].upper(),
-                "h1 sMAPE%": r.get("h1_smape", r.get("mae_pct", None)),
-                "h3 sMAPE%": r.get("h3_smape", None),
-                "h5 sMAPE%": r.get("h5_smape", None),
-                "RMSE%": r.get("rmse_pct", None),
-                "Bias%": r.get("bias_pct", None),
-                "Stability": r.get("stability", None),
-                "n_test": int(r.get("n_test", 0)),
+                "Model"     : r["model"].upper(),
+                "h1 sMAPE%" : r.get("h1_smape", r.get("mae_pct", None)),
+                "h3 sMAPE%" : r.get("h3_smape", None),
+                "RMSE%"     : r.get("rmse_pct", None),
+                "n_test"    : int(r.get("n_test", 0)),
             })
 
+    # DSM pipeline rows (if available)
     pipeline = st.session_state.get("dyn_pipeline")
     if pipeline and hasattr(pipeline, "leaderboard") and pipeline.leaderboard:
         lb = pd.DataFrame(pipeline.leaderboard)
@@ -2842,36 +2852,87 @@ with tab3:
         if not dsm_rows.empty:
             sort_col = "h1_sMAPE%" if "h1_sMAPE%" in dsm_rows.columns else "sMAPE%"
             if sort_col in dsm_rows.columns:
-                dsm_rows = (
-                    dsm_rows.sort_values(sort_col, ascending=True)
-                    .drop_duplicates(subset=["Model"], keep="first")
-                )
+                dsm_rows = (dsm_rows.sort_values(sort_col, ascending=True)
+                            .drop_duplicates(subset=["Model"], keep="first"))
             for _, row in dsm_rows.iterrows():
                 rows_all.append({
-                    "Model": f"DSM ({row['Model']})",
-                    "h1 sMAPE%": row.get("h1_sMAPE%", row.get("sMAPE%", None)),
-                    "h3 sMAPE%": row.get("h3_sMAPE%", None),
-                    "h5 sMAPE%": row.get("h5_smape", None),
-                    "RMSE%": row.get("RMSE%", row.get("WAPE%", None)),
-                    "Bias%": row.get("Bias%", None),
-                    "Stability": row.get("Stability", None),
-                    "n_test": row.get("n_test", 8),
+                    "Model"     : f"DSM ({row['Model']})",
+                    "h1 sMAPE%" : row.get("h1_sMAPE%", row.get("sMAPE%", None)),
+                    "h3 sMAPE%" : row.get("h3_sMAPE%", None),
+                    "RMSE%"     : row.get("RMSE%", row.get("WAPE%", None)),
+                    "n_test"    : int(row.get("n_test", 5)),
                 })
 
     if rows_all:
-        keep_cols = ["Model", "h1 sMAPE%", "h3 sMAPE%", "RMSE%", "n_test"]
-        out_df = pd.DataFrame(rows_all).sort_values("h1 sMAPE%", na_position="last")
-        out_df = out_df[[c for c in keep_cols if c in out_df.columns]]
-        fmt = {"h1 sMAPE%": "{:.2f}%", "h3 sMAPE%": "{:.2f}%", "RMSE%": "{:.2f}%", "n_test": "{:.0f}"}
-        st.dataframe(out_df.style.format(fmt, na_rep="—"), use_container_width=True)
+        out_df = pd.DataFrame(rows_all).sort_values("h1 sMAPE%", na_position="last").reset_index(drop=True)
+
+        # ── Ranked table with best-model badge ──────────────────────────────
+        st.markdown(f"""
+        <style>
+        .acc-table {{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px;}}
+        .acc-table th {{background:#1a1a2e;color:#a3b8d8;padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid #2d3561;}}
+        .acc-table td {{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:#dce6f0;}}
+        .acc-table tr:first-child td {{background:rgba(99,179,237,0.08);}}
+        .badge-best {{background:linear-gradient(135deg,#38a169,#276749);color:#fff;padding:2px 9px;
+                     border-radius:12px;font-size:11px;font-weight:700;margin-left:6px;letter-spacing:.4px;}}
+        .badge-rank {{color:#718096;font-size:12px;margin-right:4px;}}
+        .cell-good {{color:#68d391;}}
+        .cell-warn {{color:#f6ad55;}}
+        .cell-bad  {{color:#fc8181;}}
+        </style>
+        """, unsafe_allow_html=True)
+
+        rows_html = ""
+        for rank, (_, row) in enumerate(out_df.iterrows(), 1):
+            model_name = str(row["Model"])
+            badge = ' <span class="badge-best">BEST</span>' if model_name == best_model_name else ""
+            rank_lbl = f'<span class="badge-rank">#{rank}</span>'
+
+            def fmt_cell(val, warn=15, bad=30):
+                if val is None or (isinstance(val, float) and math.isnan(val)):
+                    return '<span style="color:#4a5568">—</span>'
+                cls = "cell-good" if val < warn else ("cell-warn" if val < bad else "cell-bad")
+                return f'<span class="{cls}">{val:.2f}%</span>'
+
+            h1_cell = fmt_cell(row.get("h1 sMAPE%"))
+            h3_cell = fmt_cell(row.get("h3 sMAPE%"), warn=20, bad=40)
+            rm_cell = fmt_cell(row.get("RMSE%"), warn=15, bad=35)
+            nt      = int(row.get("n_test", 0))
+
+            rows_html += f"""
+            <tr>
+              <td>{rank_lbl}{model_name}{badge}</td>
+              <td>{h1_cell}</td>
+              <td>{h3_cell}</td>
+              <td>{rm_cell}</td>
+              <td style="color:#718096">{nt}</td>
+            </tr>"""
+
+        table_html = f"""
+        <table class="acc-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>h1 sMAPE%</th>
+              <th>h3 sMAPE%</th>
+              <th>RMSE%</th>
+              <th>n_test</th>
+            </tr>
+          </thead>
+          <tbody>{rows_html}</tbody>
+        </table>"""
+        st.markdown(table_html, unsafe_allow_html=True)
+
         st.markdown("""
 **Metric Guide:**
 | Metric | Meaning |
 |--------|---------|
-| **h1 sMAPE%** | 1-step ahead symmetric MAPE (immediate accuracy) |
-| **h3 sMAPE%** | 3-step recursive sMAPE (medium-horizon, uses predicted lags) |
+| **h1 sMAPE%** | 1-step ahead out-of-sample symmetric MAPE — primary selection metric |
+| **h3 sMAPE%** | 3-step recursive sMAPE — medium-horizon stability signal |
 | **RMSE%** | Root-mean-square error as % of mean actual |
+| **n_test** | Number of expanding-window folds (all out-of-sample) |
 """)
+        st.caption("Green < 15% | Orange 15-30% | Red > 30% | Model ranked and selected by lowest h1 sMAPE.")
     else:
         st.info("No accuracy metrics available. Load multi-model bundle or run DSM pipeline.")
 

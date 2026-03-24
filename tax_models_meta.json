@@ -1,285 +1,122 @@
 {
   "performance": [
     {
-      "tax_head": "customs",
-      "model": "enet",
-      "h1_smape": 10.57,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 11.43,
-      "rmse_pct": 13.69,
-      "rmse_pct_abs": 15.02,
-      "bias_pct": 12.22,
-      "n_test": 2,
-      "stability": 0.0753,
-      "series": [
-        {
-          "actual": 1284608.0000000005,
-          "pred": 1334655.0068925386
-        },
-        {
-          "actual": 1588000.0000000005,
-          "pred": 1889058.6044896988
-        }
-      ]
-    },
-    {
-      "tax_head": "customs",
-      "model": "arimax",
-      "h1_smape": 53.89,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 53.65,
-      "rmse_pct": 54.06,
-      "rmse_pct_abs": 55.73,
-      "bias_pct": 12.31,
-      "n_test": 2,
-      "stability": 0.0664,
-      "series": [
-        {
-          "actual": 1284608.0000000005,
-          "pred": 680714.7708328539
-        },
-        {
-          "actual": 1588000.0000000005,
-          "pred": 2545368.2949517355
-        }
-      ]
-    },
-    {
-      "tax_head": "customs",
+      "tax_head": "dt",
       "model": "ardl",
-      "h1_smape": 10.0,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 10.0,
-      "rmse_pct": 11.0,
-      "rmse_pct_abs": 73.78,
-      "bias_pct": -62.99,
-      "n_test": 2,
-      "stability": 0.3212,
-      "series": [
-        {
-          "actual": 1284608.0000000005,
-          "pred": 931727.0000000007
-        },
-        {
-          "actual": 1588000.0000000005,
-          "pred": 131560.4694510125
-        }
-      ]
+      "h1_smape": 11.03,
+      "h3_smape": 34.45,
+      "rmse_pct": 10.95,
+      "n_test": 5,
+      "mae_pct": 11.03
     },
     {
       "tax_head": "dt",
       "model": "arimax",
-      "h1_smape": 7.56,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 7.09,
-      "rmse_pct": 9.37,
-      "rmse_pct_abs": 10.19,
-      "bias_pct": -7.62,
-      "n_test": 2,
-      "stability": 0.0613,
-      "series": [
-        {
-          "actual": 5791667.000000004,
-          "pred": 5736364.277685494
-        },
-        {
-          "actual": 6901999.999999998,
-          "pred": 5989415.198756195
-        }
-      ]
+      "h1_smape": 11.11,
+      "h3_smape": 48.52,
+      "rmse_pct": 9.5,
+      "n_test": 5,
+      "mae_pct": 11.11
     },
     {
       "tax_head": "dt",
       "model": "enet",
-      "h1_smape": 33.05,
+      "h1_smape": null,
       "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 28.32,
-      "rmse_pct": 28.45,
-      "rmse_pct_abs": 28.1,
-      "bias_pct": -28.1,
-      "n_test": 2,
-      "stability": 0.0262,
-      "series": [
-        {
-          "actual": 5791667.000000004,
-          "pred": 3999671.8698030165
-        },
-        {
-          "actual": 6901999.999999998,
-          "pred": 5127577.391954372
-        }
-      ]
-    },
-    {
-      "tax_head": "dt",
-      "model": "ardl",
-      "h1_smape": 73.49,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 53.69,
-      "rmse_pct": 53.76,
-      "rmse_pct_abs": 54.44,
-      "bias_pct": -53.93,
-      "n_test": 2,
-      "stability": 0.0275,
-      "series": [
-        {
-          "actual": 5791667.000000004,
-          "pred": 2841406.5797395417
-        },
-        {
-          "actual": 6901999.999999998,
-          "pred": 3006488.358776991
-        }
-      ]
-    },
-    {
-      "tax_head": "fed",
-      "model": "ardl",
-      "h1_smape": 44.03,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 35.99,
-      "rmse_pct": 36.21,
-      "rmse_pct_abs": 36.89,
-      "bias_pct": -36.28,
-      "n_test": 2,
-      "stability": 0.0401,
-      "series": [
-        {
-          "actual": 766641.0000000001,
-          "pred": 521496.19740592834
-        },
-        {
-          "actual": 888000.0000000006,
-          "pred": 532773.9742454023
-        }
-      ]
-    },
-    {
-      "tax_head": "fed",
-      "model": "enet",
-      "h1_smape": 47.08,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 38.07,
-      "rmse_pct": 38.16,
-      "rmse_pct_abs": 37.87,
-      "bias_pct": -37.87,
-      "n_test": 2,
-      "stability": 0.0272,
-      "series": [
-        {
-          "actual": 766641.0000000001,
-          "pred": 453944.48428205686
-        },
-        {
-          "actual": 888000.0000000006,
-          "pred": 574151.065927108
-        }
-      ]
-    },
-    {
-      "tax_head": "fed",
-      "model": "arimax",
-      "h1_smape": 86.67,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 59.45,
-      "rmse_pct": 60.64,
-      "rmse_pct_abs": 62.5,
-      "bias_pct": -60.32,
-      "n_test": 2,
-      "stability": 0.1198,
-      "series": [
-        {
-          "actual": 766641.0000000001,
-          "pred": 402719.0626729265
-        },
-        {
-          "actual": 888000.0000000006,
-          "pred": 253770.2686375906
-        }
-      ]
+      "rmse_pct": null,
+      "n_test": 0,
+      "mae_pct": null
     },
     {
       "tax_head": "gst",
-      "model": "enet",
-      "h1_smape": 21.57,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 19.47,
-      "rmse_pct": 19.48,
-      "rmse_pct_abs": 19.5,
-      "bias_pct": -19.44,
-      "n_test": 2,
-      "stability": 0.0037,
-      "series": [
-        {
-          "actual": 3901372.0000000033,
-          "pred": 3127047.1743995533
-        },
-        {
-          "actual": 4753000.0,
-          "pred": 3845278.333503336
-        }
-      ]
+      "model": "ardl",
+      "h1_smape": 7.96,
+      "h3_smape": 11.21,
+      "rmse_pct": 13.08,
+      "n_test": 5,
+      "mae_pct": 7.96
     },
     {
       "tax_head": "gst",
       "model": "arimax",
-      "h1_smape": 55.57,
-      "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 41.4,
-      "rmse_pct": 45.23,
-      "rmse_pct_abs": 42.05,
-      "bias_pct": -39.6,
-      "n_test": 2,
-      "stability": 0.1822,
-      "series": [
-        {
-          "actual": 3901372.0000000033,
-          "pred": 1575647.0510916363
-        },
-        {
-          "actual": 4753000.0,
-          "pred": 3651233.0129124885
-        }
-      ]
+      "h1_smape": 4.3,
+      "h3_smape": 8.16,
+      "rmse_pct": 5.03,
+      "n_test": 5,
+      "mae_pct": 4.3
     },
     {
       "tax_head": "gst",
-      "model": "ardl",
-      "h1_smape": 61.91,
+      "model": "enet",
+      "h1_smape": null,
       "h3_smape": null,
-      "h5_smape": null,
-      "mae_pct": 46.24,
-      "rmse_pct": 47.94,
-      "rmse_pct_abs": 50.5,
-      "bias_pct": -47.48,
-      "n_test": 2,
-      "stability": 0.1266,
-      "series": [
-        {
-          "actual": 3901372.0000000033,
-          "pred": 2591434.000000002
-        },
-        {
-          "actual": 4753000.0,
-          "pred": 1953784.3094681557
-        }
-      ]
+      "rmse_pct": null,
+      "n_test": 0,
+      "mae_pct": null
+    },
+    {
+      "tax_head": "fed",
+      "model": "ardl",
+      "h1_smape": 22.63,
+      "h3_smape": 47.25,
+      "rmse_pct": 25.98,
+      "n_test": 5,
+      "mae_pct": 22.63
+    },
+    {
+      "tax_head": "fed",
+      "model": "arimax",
+      "h1_smape": 11.08,
+      "h3_smape": 45.7,
+      "rmse_pct": 18.3,
+      "n_test": 5,
+      "mae_pct": 11.08
+    },
+    {
+      "tax_head": "fed",
+      "model": "enet",
+      "h1_smape": null,
+      "h3_smape": null,
+      "rmse_pct": null,
+      "n_test": 0,
+      "mae_pct": null
+    },
+    {
+      "tax_head": "customs",
+      "model": "ardl",
+      "h1_smape": 9.81,
+      "h3_smape": 27.57,
+      "rmse_pct": 13.21,
+      "n_test": 5,
+      "mae_pct": 9.81
+    },
+    {
+      "tax_head": "customs",
+      "model": "arimax",
+      "h1_smape": 8.65,
+      "h3_smape": 15.69,
+      "rmse_pct": 16.69,
+      "n_test": 5,
+      "mae_pct": 8.65
+    },
+    {
+      "tax_head": "customs",
+      "model": "enet",
+      "h1_smape": null,
+      "h3_smape": null,
+      "rmse_pct": null,
+      "n_test": 0,
+      "mae_pct": null
     }
   ],
   "data_span": {
-    "start": "2016",
+    "start": "1995",
     "end": "2026",
-    "n": 11
+    "n": 31
+  },
+  "backtest_config": {
+    "n_test": 5,
+    "method": "expanding-window",
+    "selection_metric": "h1_smape"
   }
 }
