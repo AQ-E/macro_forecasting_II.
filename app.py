@@ -1288,7 +1288,7 @@ def load_buoyancy() -> Optional[Dict]:
 @st.cache_data(show_spinner=False)
 def load_multimodel_assets() -> Tuple[Optional[Dict], Optional[Dict], Optional[pd.DataFrame]]:
     """Return (bundle, meta, df_hist) or (None, None, None) if absent."""
-    # Cache bust 4: Final clean Customs ARDL(1,0) - dummy_2022 removed
+    # Cache bust 5: n_test=5 expanding-window backtest meta reload
     pkl_path = _resolve("tax_models_bundle.pkl")
     json_path = _resolve("tax_models_meta.json")
     xlsx_path = _resolve("tax_prepared_data.xlsx")
@@ -2829,15 +2829,18 @@ with tab3:
 
     if perf is not None:
         sub = perf[(perf["tax_head"] == head) & (perf["n_test"] > 0)].copy()
-        if best_model_name is None and len(sub) > 0:
+        if len(sub) > 0:
             sort_col = "h1_smape" if "h1_smape" in sub.columns else "mae_pct"
-            best_row  = sub.dropna(subset=[sort_col]).sort_values(sort_col)
+            best_row = sub.dropna(subset=[sort_col]).sort_values(sort_col)
             best_model_name = str(best_row.iloc[0]["model"]).upper() if len(best_row) else None
         for _, r in perf[perf["tax_head"] == head].iterrows():
             if r.get("n_test", 0) == 0:
-                continue   # skip models with no OOS data
+                continue  # skip models with no OOS data
+            model_label = r["model"].upper()
+            if model_label == best_model_name:
+                model_label = f"★ {model_label} (Best)"
             rows_all.append({
-                "Model"     : r["model"].upper(),
+                "Model"     : model_label,
                 "h1 sMAPE%" : r.get("h1_smape", r.get("mae_pct", None)),
                 "h3 sMAPE%" : r.get("h3_smape", None),
                 "RMSE%"     : r.get("rmse_pct", None),
@@ -2864,65 +2867,20 @@ with tab3:
                 })
 
     if rows_all:
-        out_df = pd.DataFrame(rows_all).sort_values("h1 sMAPE%", na_position="last").reset_index(drop=True)
-
-        # ── Ranked table with best-model badge ──────────────────────────────
-        st.markdown(f"""
-        <style>
-        .acc-table {{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px;}}
-        .acc-table th {{background:#1a1a2e;color:#a3b8d8;padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid #2d3561;}}
-        .acc-table td {{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:#dce6f0;}}
-        .acc-table tr:first-child td {{background:rgba(99,179,237,0.08);}}
-        .badge-best {{background:linear-gradient(135deg,#38a169,#276749);color:#fff;padding:2px 9px;
-                     border-radius:12px;font-size:11px;font-weight:700;margin-left:6px;letter-spacing:.4px;}}
-        .badge-rank {{color:#718096;font-size:12px;margin-right:4px;}}
-        .cell-good {{color:#68d391;}}
-        .cell-warn {{color:#f6ad55;}}
-        .cell-bad  {{color:#fc8181;}}
-        </style>
-        """, unsafe_allow_html=True)
-
-        rows_html = ""
-        for rank, (_, row) in enumerate(out_df.iterrows(), 1):
-            model_name = str(row["Model"])
-            badge = ' <span class="badge-best">BEST</span>' if model_name == best_model_name else ""
-            rank_lbl = f'<span class="badge-rank">#{rank}</span>'
-
-            def fmt_cell(val, warn=15, bad=30):
-                if val is None or (isinstance(val, float) and math.isnan(val)):
-                    return '<span style="color:#4a5568">—</span>'
-                cls = "cell-good" if val < warn else ("cell-warn" if val < bad else "cell-bad")
-                return f'<span class="{cls}">{val:.2f}%</span>'
-
-            h1_cell = fmt_cell(row.get("h1 sMAPE%"))
-            h3_cell = fmt_cell(row.get("h3 sMAPE%"), warn=20, bad=40)
-            rm_cell = fmt_cell(row.get("RMSE%"), warn=15, bad=35)
-            nt      = int(row.get("n_test", 0))
-
-            rows_html += f"""
-            <tr>
-              <td>{rank_lbl}{model_name}{badge}</td>
-              <td>{h1_cell}</td>
-              <td>{h3_cell}</td>
-              <td>{rm_cell}</td>
-              <td style="color:#718096">{nt}</td>
-            </tr>"""
-
-        table_html = f"""
-        <table class="acc-table">
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th>h1 sMAPE%</th>
-              <th>h3 sMAPE%</th>
-              <th>RMSE%</th>
-              <th>n_test</th>
-            </tr>
-          </thead>
-          <tbody>{rows_html}</tbody>
-        </table>"""
-        st.markdown(table_html, unsafe_allow_html=True)
-
+        out_df = (pd.DataFrame(rows_all)
+                  .sort_values("h1 sMAPE%", na_position="last")
+                  .reset_index(drop=True))
+        fmt = {
+            "h1 sMAPE%": "{:.2f}%",
+            "h3 sMAPE%": "{:.2f}%",
+            "RMSE%"    : "{:.2f}%",
+            "n_test"   : "{:.0f}",
+        }
+        st.dataframe(
+            out_df.style.format(fmt, na_rep="—"),
+            use_container_width=True,
+            hide_index=True,
+        )
         st.markdown("""
 **Metric Guide:**
 | Metric | Meaning |
@@ -2932,7 +2890,7 @@ with tab3:
 | **RMSE%** | Root-mean-square error as % of mean actual |
 | **n_test** | Number of expanding-window folds (all out-of-sample) |
 """)
-        st.caption("Green < 15% | Orange 15-30% | Red > 30% | Model ranked and selected by lowest h1 sMAPE.")
+        st.caption("★ = Best model (lowest h1 sMAPE). Ranked #1 → lowest error.")
     else:
         st.info("No accuracy metrics available. Load multi-model bundle or run DSM pipeline.")
 
