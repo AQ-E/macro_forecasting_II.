@@ -2939,13 +2939,12 @@ with tab3:
                 .where(_tbl["n_test"] > 0)
             )
             # Stable display order: dt → gst → fed → customs
-            # Within each head: DSM first, then ranked bundle models, ENet last
+            # Within each head: best rank first, unranked (n_test=0) last
             _tbl["_ord"] = _tbl["_hkey"].map(
                 {h: i for i, h in enumerate(_HEAD_ORDER)}
             ).fillna(99)
-            _tbl["_dsm_first"] = _tbl["Model"].str.startswith("DSM").map({True: 0, False: 1})
-            _tbl = (_tbl.sort_values(["_ord", "_dsm_first", "Rank"], na_position="last")
-                        .drop(columns=["_hkey", "_ord", "_dsm_first"])
+            _tbl = (_tbl.sort_values(["_ord", "Rank"], na_position="last")
+                        .drop(columns=["_hkey", "_ord"])
                         .reset_index(drop=True))
 
             # ★ prefix on Rank==1 model per head; no row colouring
