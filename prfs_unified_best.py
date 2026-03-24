@@ -1288,7 +1288,7 @@ def load_buoyancy() -> Optional[Dict]:
 @st.cache_data(show_spinner=False)
 def load_multimodel_assets() -> Tuple[Optional[Dict], Optional[Dict], Optional[pd.DataFrame]]:
     """Return (bundle, meta, df_hist) or (None, None, None) if absent."""
-    # Cache bust 3: Customs ARDL(1,0) + dummy_2022 structural shock
+    # Cache bust 4: Final clean Customs ARDL(1,0) - dummy_2022 removed
     pkl_path = _resolve("tax_models_bundle.pkl")
     json_path = _resolve("tax_models_meta.json")
     xlsx_path = _resolve("tax_prepared_data.xlsx")
