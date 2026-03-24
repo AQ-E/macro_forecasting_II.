@@ -2813,6 +2813,56 @@ with tab2:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+# ─── BACKTEST SERIES HELPER ──────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def _backtest_series(
+    _bundle,
+    _df_hist: pd.DataFrame,
+    head: str,
+    model_key: str,
+    n_test: int = 5,
+    data_version: str = "",
+):
+    """Re-run expanding-window backtest and return (years, actuals, preds).
+
+    Uses fresh engine model instances so the stored bundle objects are not
+    mutated.  Returns empty lists if the model cannot be fit.
+    Underscore-prefixed args are excluded from Streamlit's cache hash.
+    """
+    try:
+        from engine.models import ARDLModel, ARIMAXModel
+
+        _MODEL_CLS = {"ardl": ARDLModel, "arimax": ARIMAXModel}
+        if model_key not in _MODEL_CLS:
+            return [], [], []
+
+        spec   = _bundle["models"][head]["spec"]
+        y_col  = spec["y"]
+        x_cols = spec.get("x", [])
+        df     = _df_hist.copy()
+        n      = len(df)
+
+        years, actuals, preds = [], [], []
+        for i in range(n - n_test, n):
+            train = df.iloc[:i]
+            test  = df.iloc[i : i + 1]
+            try:
+                actual_log = test[y_col].iloc[0]
+                if pd.isna(actual_log):
+                    continue
+                m = _MODEL_CLS[model_key]()
+                m.fit(train, y_col, x_cols)
+                fc_log = m.forecast(test, steps=1).iloc[0]
+                years.append(test.index[0])
+                actuals.append(float(np.exp(actual_log)))
+                preds.append(float(np.exp(fc_log)))
+            except Exception:
+                continue
+        return years, actuals, preds
+    except Exception:
+        return [], [], []
+
+
 # --- TAB 3 - Forecast Accuracy ---
 with tab3:
     st.markdown("""
@@ -2825,75 +2875,211 @@ with tab3:
         </div>
     """, unsafe_allow_html=True)
 
-    rows_all = []
-    best_model_name = None
+    # ── DSM pipeline trigger (if not yet run) ────────────────────────────────
+    if "dyn_pipeline" not in st.session_state:
+        _dc1, _dc2 = st.columns([3, 1])
+        with _dc1:
+            st.info("Dynamic Pipeline not yet run — DSM rows will appear in the table once fitted.")
+        with _dc2:
+            if st.button("▶ Run Dynamic Pipeline", use_container_width=True, key="acc_run_dsm"):
+                with st.spinner("Fitting 2-stage DSM pipeline…"):
+                    dynamic_run_pipeline(df_raw)
+                st.rerun()
+
+    # ── Part A: Cross-tax-head accuracy table ─────────────────────────────────
+    _HEAD_ORDER = ["dt", "gst", "fed", "customs"]
 
     if perf is not None:
-        sub = perf[(perf["tax_head"] == head) & (perf["n_test"] > 0)].copy()
-        if len(sub) > 0:
-            sort_col = "h1_smape" if "h1_smape" in sub.columns else "mae_pct"
-            best_row = sub.dropna(subset=[sort_col]).sort_values(sort_col)
-            best_model_name = str(best_row.iloc[0]["model"]).upper() if len(best_row) else None
-        for _, r in perf[perf["tax_head"] == head].iterrows():
-            if r.get("n_test", 0) == 0:
-                continue  # skip models with no OOS data
-            model_label = r["model"].upper()
-            if model_label == best_model_name:
-                model_label = f"★ {model_label} (Best)"
-            rows_all.append({
-                "Model"     : model_label,
-                "h1 sMAPE%" : r.get("h1_smape", r.get("mae_pct", None)),
-                "h3 sMAPE%" : r.get("h3_smape", None),
-                "RMSE%"     : r.get("rmse_pct", None),
-                "n_test"    : int(r.get("n_test", 0)),
+        _tbl_rows = []
+        # Include ALL models (n_test=0 rows like ENet shown with — metrics)
+        for _, r in perf.iterrows():
+            _n = int(r.get("n_test", 0))
+            _tbl_rows.append({
+                "Tax Head"  : TAX_LABELS.get(r["tax_head"], r["tax_head"]),
+                "_hkey"     : r["tax_head"],
+                "Model"     : r["model"].upper(),
+                "h1 sMAPE%" : r.get("h1_smape", r.get("mae_pct", None)) if _n > 0 else None,
+                "h3 sMAPE%" : r.get("h3_smape", None) if _n > 0 else None,
+                "RMSE%"     : r.get("rmse_pct", None) if _n > 0 else None,
+                "n_test"    : _n,
             })
 
-    # DSM pipeline rows (if available)
-    pipeline = st.session_state.get("dyn_pipeline")
-    if pipeline and hasattr(pipeline, "leaderboard") and pipeline.leaderboard:
-        lb = pd.DataFrame(pipeline.leaderboard)
-        dsm_rows = lb[(lb["Tax Head"] == head.upper()) & (lb["Type"] == "Policy")].copy()
-        if not dsm_rows.empty:
-            sort_col = "h1_sMAPE%" if "h1_sMAPE%" in dsm_rows.columns else "sMAPE%"
-            if sort_col in dsm_rows.columns:
-                dsm_rows = (dsm_rows.sort_values(sort_col, ascending=True)
-                            .drop_duplicates(subset=["Model"], keep="first"))
-            for _, row in dsm_rows.iterrows():
-                rows_all.append({
-                    "Model"     : f"DSM ({row['Model']})",
-                    "h1 sMAPE%" : row.get("h1_sMAPE%", row.get("sMAPE%", None)),
-                    "h3 sMAPE%" : row.get("h3_sMAPE%", None),
-                    "RMSE%"     : row.get("RMSE%", row.get("WAPE%", None)),
-                    "n_test"    : int(row.get("n_test", 5)),
-                })
+        # Append DSM pipeline rows (if the dynamic pipeline has been run)
+        _dyn_pipeline = st.session_state.get("dyn_pipeline")
+        if _dyn_pipeline and hasattr(_dyn_pipeline, "leaderboard") and _dyn_pipeline.leaderboard:
+            _lb = pd.DataFrame(_dyn_pipeline.leaderboard)
+            # One best DSM row per tax head (lowest sMAPE, Policy type only)
+            for _hk in _HEAD_ORDER:
+                _dsm_sub = _lb[
+                    (_lb["Tax Head"] == _hk.upper()) & (_lb["Type"] == "Policy")
+                ].copy()
+                if _dsm_sub.empty:
+                    continue
+                _sc = "h1_sMAPE%" if "h1_sMAPE%" in _dsm_sub.columns else "sMAPE%"
+                if _sc in _dsm_sub.columns:
+                    _dsm_sub = (_dsm_sub.sort_values(_sc)
+                                        .drop_duplicates(subset=["Model"], keep="first"))
+                for _, _dr in _dsm_sub.iterrows():
+                    _tbl_rows.append({
+                        "Tax Head"  : TAX_LABELS.get(_hk, _hk),
+                        "_hkey"     : _hk,
+                        "Model"     : f"DSM ({_dr['Model']})",
+                        "h1 sMAPE%" : _dr.get("h1_sMAPE%", _dr.get("sMAPE%", None)),
+                        "h3 sMAPE%" : _dr.get("h3_sMAPE%", None),
+                        "RMSE%"     : _dr.get("RMSE%", _dr.get("WAPE%", None)),
+                        "n_test"    : int(_dr.get("n_test", 0)),
+                    })
 
-    if rows_all:
-        out_df = (pd.DataFrame(rows_all)
-                  .sort_values("h1 sMAPE%", na_position="last")
-                  .reset_index(drop=True))
-        fmt = {
-            "h1 sMAPE%": "{:.2f}%",
-            "h3 sMAPE%": "{:.2f}%",
-            "RMSE%"    : "{:.2f}%",
-            "n_test"   : "{:.0f}",
-        }
-        st.dataframe(
-            out_df.style.format(fmt, na_rep="—"),
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.markdown("""
-**Metric Guide:**
-| Metric | Meaning |
-|--------|---------|
-| **h1 sMAPE%** | 1-step ahead out-of-sample symmetric MAPE — primary selection metric |
-| **h3 sMAPE%** | 3-step recursive sMAPE — medium-horizon stability signal |
-| **RMSE%** | Root-mean-square error as % of mean actual |
-| **n_test** | Number of expanding-window folds (all out-of-sample) |
-""")
-        st.caption("★ = Best model (lowest h1 sMAPE). Ranked #1 → lowest error.")
+        if _tbl_rows:
+            _tbl = pd.DataFrame(_tbl_rows)
+            # Rank only rows that have a valid h1 sMAPE (n_test > 0)
+            _tbl["Rank"] = (
+                _tbl.groupby("_hkey")["h1 sMAPE%"]
+                .rank(method="min", ascending=True, na_option="bottom")
+                .where(_tbl["n_test"] > 0)
+            )
+            # Stable display order: dt → gst → fed → customs
+            # Within each head: best rank first, unranked (n_test=0) last
+            _tbl["_ord"] = _tbl["_hkey"].map(
+                {h: i for i, h in enumerate(_HEAD_ORDER)}
+            ).fillna(99)
+            _tbl = (_tbl.sort_values(["_ord", "Rank"], na_position="last")
+                        .drop(columns=["_hkey", "_ord"])
+                        .reset_index(drop=True))
+
+            # ★ prefix on Rank==1 model per head; no row colouring
+            _tbl["Model"] = _tbl.apply(
+                lambda row: f"★ {row['Model']}" if row["Rank"] == 1.0 else row["Model"],
+                axis=1,
+            )
+
+            _display_cols = [
+                "Tax Head", "Model", "h1 sMAPE%", "h3 sMAPE%", "RMSE%", "n_test", "Rank"
+            ]
+            _tbl = _tbl[_display_cols]
+
+            _fmt = {
+                "h1 sMAPE%": "{:.2f}",
+                "h3 sMAPE%": "{:.2f}",
+                "RMSE%"    : "{:.2f}",
+                "n_test"   : "{:.0f}",
+                "Rank"     : "{:.0f}",
+            }
+            st.dataframe(
+                _tbl.style.format(_fmt, na_rep="—"),
+                use_container_width=True,
+                hide_index=True,
+                height=min(50 + 35 * len(_tbl), 500),
+            )
+            st.caption(
+                "★ = best model per tax head (lowest h1 sMAPE). "
+                "— = model not backtested in bundle (ENet requires custom feature pipeline). "
+                "DSM rows appear only after running the Dynamic Pipeline."
+            )
+        else:
+            st.info("No accuracy metrics available. Load multi-model bundle.")
     else:
-        st.info("No accuracy metrics available. Load multi-model bundle or run DSM pipeline.")
+        st.info("No accuracy metrics available. Load multi-model bundle.")
+
+    # ── Part B/C: Actual vs Backtest Predictions chart ────────────────────────
+    st.markdown("---")
+    st.markdown("#### Actual vs Backtest Predictions (out-of-sample only)")
+
+    _col1, _col2 = st.columns([1, 1])
+    with _col1:
+        _chart_head = st.selectbox(
+            "Tax head",
+            options=_HEAD_ORDER,
+            format_func=lambda h: TAX_LABELS.get(h, h),
+            key="acc_tab_chart_head",
+        )
+    # Available models = those with n_test > 0 for the selected head
+    _avail_models: list = []
+    if perf is not None:
+        _avail_models = (
+            perf[(perf["tax_head"] == _chart_head) & (perf["n_test"] > 0)]
+            .sort_values("h1_smape")["model"]
+            .tolist()
+        )
+    with _col2:
+        _chart_model = st.selectbox(
+            "Model",
+            options=_avail_models if _avail_models else ["—"],
+            format_func=lambda m: m.upper() if m != "—" else "—",
+            key="acc_tab_chart_model",
+        )
+
+    if bundle is not None and df_hist is not None and _avail_models and _chart_model != "—":
+        with st.spinner("Computing backtest series…"):
+            _bt_years, _bt_actuals, _bt_preds = _backtest_series(
+                bundle, df_hist,
+                head=_chart_head,
+                model_key=_chart_model,
+                n_test=10,
+                data_version=_data_version,
+            )
+
+        if _bt_years:
+            # Full actual history (level scale, PKR bn)
+            _y_col   = bundle["models"][_chart_head]["spec"]["y"]
+            _hist_idx = df_hist.index.tolist()
+            _hist_act = np.exp(df_hist[_y_col].values)
+
+            _fig = go.Figure()
+
+            # Trace 1: full actual history — solid line
+            _fig.add_trace(go.Scatter(
+                x=_hist_idx,
+                y=_hist_act,
+                mode="lines+markers",
+                name="Actual",
+                line=dict(color="#1f77b4", width=2),
+                marker=dict(size=5),
+            ))
+
+            # Trace 2: OOS backtest predictions ONLY — dashed, no in-sample
+            _fig.add_trace(go.Scatter(
+                x=_bt_years,
+                y=_bt_preds,
+                mode="lines+markers",
+                name=f"Backtest ({_chart_model.upper()})",
+                line=dict(color="#ff7f0e", width=2, dash="dash"),
+                marker=dict(size=9, symbol="x"),
+            ))
+
+            _fig.update_layout(
+                title=dict(
+                    text=(
+                        f"{TAX_LABELS.get(_chart_head, _chart_head)} — "
+                        f"Actual vs {_chart_model.upper()} Backtest"
+                    ),
+                    font=dict(size=14),
+                ),
+                xaxis_title="Fiscal Year",
+                yaxis_title="PKR bn",
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.02,
+                    xanchor="right", x=1,
+                ),
+                height=380,
+                margin=dict(l=50, r=20, t=60, b=40),
+                plot_bgcolor="white",
+                xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+                yaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+            )
+            st.plotly_chart(_fig, use_container_width=True)
+            st.caption(
+                f"Dashed orange = out-of-sample backtest predictions only "
+                f"({len(_bt_years)} expanding-window folds, n_test=10). "
+                "No in-sample fitted values shown."
+            )
+        else:
+            st.warning(
+                "Could not compute backtest series for this model/head combination. "
+                "The model may require more data than is available."
+            )
+    else:
+        st.info("Load multi-model bundle to view the backtest chart.")
 
     st.markdown("</div>", unsafe_allow_html=True)  # close content-section
 
